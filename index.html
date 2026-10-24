@@ -1,0 +1,807 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIwithDMS | Word Vectors 3D Lab</title>
+
+<style>
+:root {
+  --bg: #07111f;
+  --panel: #101e30;
+  --panel2: #14263b;
+  --text: #f3f7ff;
+  --muted: #a7b7ce;
+  --cyan: #48d9ff;
+  --purple: #b69aff;
+  --green: #6ce5b1;
+  --orange: #ffbf70;
+  --border: #29415d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, #173758 0%, var(--bg) 58%);
+  color: var(--text);
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  line-height: 1.6;
+}
+
+button, input { font: inherit; }
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #1a3049;
+  color: var(--text);
+  transition: .2s ease;
+}
+
+button:hover {
+  border-color: var(--cyan);
+  background: #244363;
+}
+
+button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+header {
+  padding: 24px clamp(16px, 4vw, 54px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.brand {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.brand span { color: var(--cyan); }
+
+.tag {
+  color: var(--green);
+  border: 1px solid #326c63;
+  border-radius: 30px;
+  padding: 5px 12px;
+  font-size: .78rem;
+}
+
+main {
+  width: min(1400px, 100%);
+  margin: auto;
+  padding: 28px clamp(14px, 3vw, 40px) 50px;
+}
+
+.hero { margin: 12px 0 28px; }
+
+.eyebrow {
+  color: var(--cyan);
+  font-size: .76rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  line-height: 1.1;
+  margin: 12px 0;
+  letter-spacing: -1.5px;
+}
+
+h1 span {
+  color: var(--cyan);
+}
+
+.hero p {
+  max-width: 760px;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(290px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.panel {
+  background: linear-gradient(145deg, #122239, #0c1829);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  min-width: 0;
+  box-shadow: 0 12px 40px #00000020;
+}
+
+.panel h2 {
+  font-size: 1.1rem;
+  margin: 0 0 6px;
+}
+
+.muted { color: var(--muted); }
+
+.small { font-size: .86rem; }
+
+.stage {
+  position: relative;
+  margin-top: 16px;
+  min-height: 410px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #25425e;
+  background:
+    radial-gradient(ellipse at 50% 45%, #173c5b 0%, #0a192b 67%);
+}
+
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 72%, #07111f70);
+}
+
+#space {
+  width: 100%;
+  height: 410px;
+  display: block;
+  touch-action: manipulation;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.word-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.word-buttons button { padding: 7px 11px; }
+
+.word-buttons button.active {
+  border-color: var(--cyan);
+  background: #1c4b68;
+}
+
+.selected-word {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  background: #0b192a;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.word-symbol {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: #1c4761;
+  color: var(--cyan);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.selected-word h3 { margin: 0; }
+.selected-word p { margin: 2px 0 0; }
+
+.vector {
+  font-family: Consolas, monospace;
+  color: var(--green);
+  overflow-wrap: anywhere;
+  font-size: .88rem;
+}
+
+.section-title {
+  margin: 28px 0 14px;
+  font-size: 1.5rem;
+}
+
+.stack { display: grid; gap: 16px; }
+
+.field-label {
+  display: block;
+  font-weight: 700;
+  margin: 12px 0 6px;
+  font-size: .9rem;
+}
+
+select, input[type="range"] {
+  width: 100%;
+}
+
+select {
+  padding: 10px;
+  background: #091727;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+input[type="range"] { accent-color: var(--cyan); }
+
+.equation {
+  text-align: center;
+  padding: 18px 10px;
+  margin: 14px 0;
+  background: #091727;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.equation .formula {
+  font-size: clamp(1.15rem, 3vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: .4px;
+}
+
+.result {
+  color: var(--green);
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-top: 8px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.step-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #173e58;
+  color: var(--cyan);
+  font-weight: 800;
+}
+
+.step h3 { margin: 0 0 3px; font-size: 1rem; }
+.step p { margin: 0; color: var(--muted); font-size: .91rem; }
+
+.callout {
+  border-left: 3px solid var(--orange);
+  background: #2b251d;
+  padding: 12px 14px;
+  border-radius: 0 10px 10px 0;
+  color: #ffe4bd;
+  font-size: .88rem;
+  margin-top: 14px;
+}
+
+.teaching-script {
+  font-size: 1.03rem;
+  color: #dce9fa;
+  line-height: 1.8;
+}
+
+footer {
+  text-align: center;
+  padding: 25px 15px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  font-size: .82rem;
+}
+
+@media (max-width: 850px) {
+  .grid { grid-template-columns: 1fr; }
+  .stage, #space { min-height: 340px; height: 340px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="brand">AIwith<span>DMS</span></div>
+  <div class="tag">LEARN · BUILD · TRANSFORM · GOVERN</div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="eyebrow">Interactive AI Learning Lab</div>
+    <h1>Words become numbers.<br><span>Numbers reveal relationships.</span></h1>
+    <p>
+      Discover how computers represent words using vectors.
+      Explore a 3D-style word universe, inspect example numbers,
+      and experiment with the famous King–Queen analogy.
+    </p>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>01 / Explore the Word Universe</h2>
+      <p class="muted small">
+        Each glowing point represents a word. Select a point or a word
+        below to explore its illustrative vector.
+      </p>
+
+      <div class="stage">
+        <canvas id="space" aria-label="Interactive 3D-style word vector visualization">
+          Interactive word visualization.
+        </canvas>
+      </div>
+
+      <div class="legend">
+        <span><i class="dot" style="background:#48d9ff"></i>Royal words</span>
+        <span><i class="dot" style="background:#b69aff"></i>People</span>
+        <span><i class="dot" style="background:#6ce5b1"></i>Food</span>
+        <span><i class="dot" style="background:#ffbf70"></i>Healthcare</span>
+      </div>
+
+      <div class="word-buttons" id="wordButtons"></div>
+
+      <div class="selected-word">
+        <div class="word-symbol" id="symbol">K</div>
+        <div>
+          <h3 id="selectedName">King</h3>
+          <p class="muted small">Illustrative numerical representation</p>
+          <div class="vector" id="selectedVector"></div>
+        </div>
+      </div>
+
+      <p class="muted small">
+        Teaching note: this is a toy visualization using invented,
+        three-dimensional coordinates. Real Word2Vec models learn
+        vectors from text and generally use many more dimensions.
+      </p>
+    </section>
+
+    <aside class="stack">
+      <section class="panel">
+        <h2>02 / What is a vector?</h2>
+        <p class="muted small">
+          Imagine describing a word using a list of numbers.
+          That list is called a vector.
+        </p>
+
+        <div class="equation">
+          <div class="muted small">Example representation</div>
+          <div class="formula">King = [0.8, 0.6, 0.2]</div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <h3>Word</h3>
+            <p>We start with a word written in ordinary language.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <h3>Numbers</h3>
+            <p>The model represents it as a list of numerical values.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <h3>Relationships</h3>
+            <p>We can compare vectors mathematically to explore patterns.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>03 / Analogy Experiment</h2>
+        <p class="muted small">
+          Explore the classic word-vector relationship.
+        </p>
+
+        <div class="equation">
+          <div class="formula">King − Man + Woman</div>
+          <div style="font-size:1.6rem;color:var(--cyan)">≈</div>
+          <div class="result">Queen</div>
+        </div>
+
+        <p class="small">
+          The idea is to subtract one learned direction and add another.
+          In some trained word-vector models, the resulting vector
+          is closest to the vector for “Queen”.
+        </p>
+
+        <div class="callout">
+          This analogy is a teaching example, not a guaranteed rule.
+          The coordinates in this website are illustrative and do not
+          calculate a real Word2Vec result.
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <h2 class="section-title">04 / Try changing the word</h2>
+  <section class="panel">
+    <p class="muted">
+      Select different words and compare their example coordinates.
+      The values below are made up to teach the concept.
+    </p>
+
+    <label class="field-label" for="wordSelect">Choose a word</label>
+    <select id="wordSelect">
+      <option>King</option>
+      <option>Queen</option>
+      <option>Man</option>
+      <option>Woman</option>
+      <option>Doctor</option>
+      <option>Nurse</option>
+      <option>Apple</option>
+      <option>Mango</option>
+    </select>
+
+    <label class="field-label" for="dim1">
+      Example dimension 1: <span id="v1">0.8</span>
+    </label>
+    <input id="dim1" type="range" min="-1" max="1" step="0.1" value="0.8">
+
+    <label class="field-label" for="dim2">
+      Example dimension 2: <span id="v2">0.6</span>
+    </label>
+    <input id="dim2" type="range" min="-1" max="1" step="0.1" value="0.6">
+
+    <label class="field-label" for="dim3">
+      Example dimension 3: <span id="v3">0.2</span>
+    </label>
+    <input id="dim3" type="range" min="-1" max="1" step="0.1" value="0.2">
+
+    <div class="equation">
+      <div class="muted small">Your current vector</div>
+      <div class="formula" id="currentVector">[0.8, 0.6, 0.2]</div>
+    </div>
+
+    <button id="resetButton">Reset example values</button>
+  </section>
+
+  <h2 class="section-title">05 / Explain it to a beginner</h2>
+  <section class="panel">
+    <div class="teaching-script">
+      “Think about teaching a computer a language. Humans understand
+      words through experience and context. Computers work with numbers.
+      Word embedding methods represent words as lists of numbers called
+      vectors. By learning from many examples of text, a model can learn
+      patterns that place words with related uses near each other in
+      a numerical space. These representations can help AI systems
+      with search, language tasks, and recommendations.”
+    </div>
+    <button id="speakButton">▶ Read explanation aloud</button>
+    <button id="stopButton">■ Stop</button>
+  </section>
+
+  <h2 class="section-title">06 / Remember the difference</h2>
+  <div class="grid">
+    <section class="panel">
+      <h2 style="color:var(--cyan)">Vector</h2>
+      <p>A list of numbers representing a point or direction in a mathematical space.</p>
+      <div class="equation">
+        <div class="formula">[0.8, 0.6, 0.2]</div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2 style="color:var(--green)">Word embedding</h2>
+      <p>A learned numerical representation of a word or token, designed to capture useful patterns and relationships.</p>
+      <div class="equation">
+        <div class="formula">Word → Vector</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  AIwithDMS · Education Through Technology<br>
+  Educational simulation only. Example coordinates are not actual model output.
+</footer>
+
+<script>
+const words = [
+  {name:"King",    v:[ .8, .6, .2], color:"#48d9ff", group:"Royal"},
+  {name:"Queen",   v:[ .7, .8, .2], color:"#48d9ff", group:"Royal"},
+  {name:"Man",     v:[ .4, .3, .1], color:"#b69aff", group:"People"},
+  {name:"Woman",   v:[ .3, .5, .1], color:"#b69aff", group:"People"},
+  {name:"Doctor",  v:[-.5, .4, .7], color:"#ffbf70", group:"Healthcare"},
+  {name:"Nurse",   v:[-.4, .5, .6], color:"#ffbf70", group:"Healthcare"},
+  {name:"Apple",   v:[-.7,-.5, .2], color:"#6ce5b1", group:"Food"},
+  {name:"Mango",   v:[-.6,-.6, .3], color:"#6ce5b1", group:"Food"}
+];
+
+let selected = "King";
+let customVectors = {};
+let rotation = 0;
+let tilt = -0.24;
+let drag = false;
+let lastX = 0;
+let lastY = 0;
+
+const canvas = document.getElementById("space");
+const ctx = canvas.getContext("2d");
+
+function getVector(word) {
+  return customVectors[word] || words.find(w => w.name === word).v;
+}
+
+function resizeCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, rect.width * dpr);
+  canvas.height = Math.max(1, rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+
+function project(v, width, height) {
+  const scale = Math.min(width, height) * 0.33;
+  const [x, y, z] = v;
+
+  const xr = x * Math.cos(rotation) - z * Math.sin(rotation);
+  const zr = x * Math.sin(rotation) + z * Math.cos(rotation);
+  const yr = y * Math.cos(tilt) - zr * Math.sin(tilt);
+  const depth = y * Math.sin(tilt) + zr * Math.cos(tilt);
+
+  const perspective = 2.8 / (2.8 + depth * 0.5);
+  return {
+    x: width / 2 + xr * scale * perspective,
+    y: height / 2 - yr * scale * perspective,
+    depth,
+    perspective
+  };
+}
+
+function drawLine(a, b, color, width = 1) {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+}
+
+function draw() {
+  if (!ctx) return;
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  if (!width || !height) return;
+
+  ctx.clearRect(0, 0, width, height);
+
+  // Subtle grid floor
+  const origin = project([0, 0, 0], width, height);
+  for (let i = -2; i <= 2; i++) {
+    drawLine(
+      project([-1, i * 0.3, -1], width, height),
+      project([1, i * 0.3, 1], width, height),
+      "#294761", 0.6
+    );
+    drawLine(
+      project([i * 0.4, -1, -1], width, height),
+      project([i * 0.4, 1, 1], width, height),
+      "#203a51", 0.6
+    );
+  }
+
+  // Coordinate axes
+  drawLine(origin, project([1,0,0], width,height), "#ff7777", 1.5);
+  drawLine(origin, project([0,1,0], width,height), "#6ce5b1", 1.5);
+  drawLine(origin, project([0,0,1], width,height), "#48d9ff", 1.5);
+
+  const axisLabels = [
+    {v:[1.12,0,0], text:"X"},
+    {v:[0,1.12,0], text:"Y"},
+    {v:[0,0,1.12], text:"Z"}
+  ];
+
+  ctx.font = "12px Segoe UI";
+  axisLabels.forEach(a => {
+    const p = project(a.v, width, height);
+    ctx.fillStyle = "#a7b7ce";
+    ctx.fillText(a.text, p.x, p.y);
+  });
+
+  const points = words.map(w => ({
+    ...w,
+    p: project(getVector(w.name), width, height)
+  })).sort((a,b) => a.p.depth - b.p.depth);
+
+  points.forEach(w => {
+    const p = w.p;
+    const r = (w.name === selected ? 8 : 5.5) * p.perspective;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r * 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = w.color + "24";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = w.color;
+    ctx.fill();
+
+    if (w.name === selected) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+
+    ctx.font = (w.name === selected ? "bold 14px" : "12px") + " Segoe UI";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#f3f7ff";
+    ctx.fillText(w.name, p.x, p.y - r - 8);
+  });
+
+  ctx.textAlign = "left";
+}
+
+function chooseWord(name) {
+  selected = name;
+  document.getElementById("selectedName").textContent = name;
+  document.getElementById("symbol").textContent = name[0];
+
+  const v = getVector(name);
+  document.getElementById("selectedVector").textContent =
+    "[" + v.map(n => Number(n).toFixed(1)).join(", ") + "]";
+
+  document.querySelectorAll("#wordButtons button").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.word === name);
+  });
+
+  document.getElementById("wordSelect").value = name;
+  setSliders(v);
+  draw();
+}
+
+function setSliders(v) {
+  ["dim1","dim2","dim3"].forEach((id,i) => {
+    document.getElementById(id).value = v[i];
+    document.getElementById("v" + (i+1)).textContent =
+      Number(v[i]).toFixed(1);
+  });
+  document.getElementById("currentVector").textContent =
+    "[" + v.map(n => Number(n).toFixed(1)).join(", ") + "]";
+}
+
+function renderButtons() {
+  const container = document.getElementById("wordButtons");
+  words.forEach(w => {
+    const button = document.createElement("button");
+    button.textContent = w.name;
+    button.dataset.word = w.name;
+    button.addEventListener("click", () => chooseWord(w.name));
+    container.appendChild(button);
+  });
+}
+
+function updateCustomVector() {
+  const v = [
+    Number(document.getElementById("dim1").value),
+    Number(document.getElementById("dim2").value),
+    Number(document.getElementById("dim3").value)
+  ];
+
+  customVectors[selected] = v;
+  setSliders(v);
+  document.getElementById("selectedVector").textContent =
+    "[" + v.map(n => n.toFixed(1)).join(", ") + "]";
+  draw();
+}
+
+["dim1","dim2","dim3"].forEach(id => {
+  document.getElementById(id).addEventListener("input", updateCustomVector);
+});
+
+document.getElementById("wordSelect").addEventListener("change", e => {
+  chooseWord(e.target.value);
+});
+
+document.getElementById("resetButton").addEventListener("click", () => {
+  customVectors = {};
+  chooseWord(selected);
+});
+
+canvas.addEventListener("pointerdown", e => {
+  drag = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+  canvas.setPointerCapture(e.pointerId);
+});
+
+canvas.addEventListener("pointermove", e => {
+  if (!drag) return;
+  rotation += (e.clientX - lastX) * 0.008;
+  tilt += (e.clientY - lastY) * 0.006;
+  tilt = Math.max(-1.1, Math.min(1.1, tilt));
+  lastX = e.clientX;
+  lastY = e.clientY;
+  draw();
+});
+
+canvas.addEventListener("pointerup", () => { drag = false; });
+canvas.addEventListener("pointercancel", () => { drag = false; });
+
+canvas.addEventListener("click", e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  let closest = null;
+  let best = 30;
+
+  words.forEach(w => {
+    const p = project(getVector(w.name), canvas.clientWidth, canvas.clientHeight);
+    const d = Math.hypot(x - p.x, y - p.y);
+    if (d < best) {
+      closest = w.name;
+      best = d;
+    }
+  });
+
+  if (closest) chooseWord(closest);
+});
+
+document.getElementById("speakButton").addEventListener("click", () => {
+  if (!("speechSynthesis" in window)) {
+    alert("Speech playback is not supported by this browser.");
+    return;
+  }
+
+  speechSynthesis.cancel();
+  const text = document.querySelector(".teaching-script").innerText;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.9;
+  speechSynthesis.speak(utterance);
+});
+
+document.getElementById("stopButton").addEventListener("click", () => {
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+});
+
+renderButtons();
+chooseWord("King");
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+</script>
+</body>
+</html>
